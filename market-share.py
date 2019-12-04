@@ -1,4 +1,5 @@
 import pandas as pd
+import seaborn as sns
 
 # data paths
 PBP_PATH = 'https://raw.githubusercontent.com/ryurko/nflscrapR-data/master/play_by_play_data/regular_season/reg_pbp_2019.csv'
@@ -112,3 +113,52 @@ rec_market_share_all = (
 # output them to csv
 rec_market_share_all.to_csv('rec_market_share_all.csv', index=False)
 rb_market_share_all.to_csv('rb_market_share_all.csv', index=False)
+
+# plotting section
+
+# look at average recieving market share over time
+# main plot
+g = sns.relplot(x='week', y='rec_market_share', kind='line', aspect=1.2,
+                data=rec_market_share_all)
+# add title
+g.fig.subplots_adjust(top=0.9)
+g.fig.suptitle('Recieving Market Share By Week')
+
+g.savefig('rec_market_share_by_week.png') # save
+
+# look at average market share over time by position
+g = sns.relplot(x='week', y='rec_market_share', kind='line', hue='position',
+                aspect=1.2, data=rec_market_share_all)
+
+g.fig.subplots_adjust(top=0.9)
+g.fig.suptitle('Recieving Market Share By Position and Week')
+
+g.savefig('rec_market_share_by_pos_week.png') # save
+
+# look at max (for each position) market share over time
+g = sns.relplot(x='week', y='rec_market_share', kind='line', hue='position',
+                aspect=1.2,
+                data=rec_market_share_all
+                .groupby(['week', 'position'])
+                .max()
+                .reset_index())
+g.fig.subplots_adjust(top=0.9)
+g.fig.suptitle('Maximum Recieving Market Share By Position and Week')
+g.savefig('max_rec_market_share_by_pos_week.png') # save
+
+# look at average market share over time of the top 20 rbs
+# first need to identify the top 20 rbs
+top_rb = (rb_market_share_all
+          .groupby('player_name')
+          .agg(ave_market_share = ('rb_market_share', 'mean'))
+          .sort_values('ave_market_share', ascending=False)
+          .head(20)
+          .reset_index())
+
+# then plot
+g = sns.relplot(x='week', y='rb_market_share', kind='line', col='player_name',
+                hue='player_name', col_wrap=4, height=2, aspect=1.2,
+                data=pd.merge(rb_market_share_all, top_rb), legend=False)
+g.fig.subplots_adjust(top=0.9)
+g.fig.suptitle('Market Share By Week - Top 20 RBs')
+g.savefig('top20_rb_market_share_by_week.png') # save
